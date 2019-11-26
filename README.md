@@ -1,5 +1,5 @@
 # generator-jhipster-pulsar
-[![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-image]][daviddm-url]
+[![NPM version][npm-image]][npm-url] [![Build Status][github-image]][github-url] [![Dependency Status][daviddm-image]][daviddm-url]
 > JHipster module, Module to support Apache Pulsar in your JHipster app
 
 # Introduction
@@ -51,7 +51,7 @@ Apache-2.0 © [Christophe Bornet](https://github.com/cbornet)
 
 [npm-image]: https://img.shields.io/npm/v/generator-jhipster-pulsar.svg
 [npm-url]: https://npmjs.org/package/generator-jhipster-pulsar
-[travis-image]: https://travis-ci.org/cbornet/generator-jhipster-pulsar.svg?branch=master
-[travis-url]: https://travis-ci.org/cbornet/generator-jhipster-pulsar
+[github-image]: https://github.com/cbornet/generator-jhipster-pulsar/workflows/Build/badge.svg
+[github-url]: https://github.com/cbornet/generator-jhipster-pulsar/actions
 [daviddm-image]: https://david-dm.org/cbornet/generator-jhipster-pulsar.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/cbornet/generator-jhipster-pulsar

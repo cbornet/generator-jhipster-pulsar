@@ -1,4 +1,4 @@
-name: JHipster Pulsar module CI
+name: Build
 on: [push, pull_request]
 jobs:
     applications:
