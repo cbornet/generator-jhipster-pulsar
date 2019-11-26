@@ -1,0 +1,10 @@
+{
+  "generator-jhipster-module": {
+    "promptValues": {
+      "githubName": "cbornet",
+      "authorName": "Christophe Bornet",
+      "authorEmail": "cbornet@hotmail.com",
+      "authorUrl": "https://github.com/cbornet"
+    }
+  }
+}
