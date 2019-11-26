@@ -1,2 +1,0 @@
-hello pulsar!
-It's dummy.txt

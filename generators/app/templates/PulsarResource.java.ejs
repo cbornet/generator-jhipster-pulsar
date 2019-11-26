@@ -1,0 +1,104 @@
+package <%= packageName %>.web.rest;
+
+import <%= packageName %>.config.PulsarProperties;
+import org.apache.pulsar.client.api.*;
+import org.bouncycastle.util.encoders.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+@RestController
+@RequestMapping("/api/pulsar")
+public class PulsarResource {
+
+    private final Logger log = LoggerFactory.getLogger(PulsarResource.class);
+
+    private final PulsarProperties pulsarProperties;
+    private PulsarClient client;
+    private Map<String, Consumer<String>> consumers = new HashMap<>();
+
+    PulsarResource(PulsarProperties pulsarProperties) throws PulsarClientException {
+        this.pulsarProperties = pulsarProperties;
+        this.client = PulsarClient.builder()
+            .loadConf(pulsarProperties.getClientProps())
+            .build();
+    }
+
+    @PostMapping("/publish/{topic}")
+    public String sendMessageToPulsarTopic(@PathVariable String topic,
+                                          @RequestParam("message") String message,
+                                          @RequestParam(value = "key", required = false) String key) throws PulsarClientException {
+        log.debug("REST request to send to Pulsar topic {} with key {} the message : {}", topic, key, message);
+        Producer<String> producer = client.newProducer(Schema.STRING)
+            .loadConf(pulsarProperties.getProducerProps())
+            .topic(topic)
+            .create();
+
+        TypedMessageBuilder<String> msg = producer.newMessage().value(message);
+        if (key != null) {
+            msg.key(key);
+        }
+        MessageId messageId = msg.send();
+        producer.close();
+        return Base64.toBase64String(messageId.toByteArray());
+    }
+
+    @PutMapping("/subscriptions/{subscriptionName}")
+    public void createSubscription(@PathVariable String subscriptionName,
+                                   @RequestParam("topic") List<String> topics,
+                                   @RequestParam Map<String, String> params) throws PulsarClientException {
+        log.debug("REST request to create Pulsar subscription {} on topics {}", subscriptionName, topics);
+        Map<String, Object> consumerProps = pulsarProperties.getConsumerProps();
+        consumerProps.putAll(params);
+        consumerProps.remove("topic");
+        Consumer<String> consumer = client.newConsumer(Schema.STRING)
+            .loadConf(consumerProps)
+            .subscriptionName(subscriptionName)
+            .topics(topics)
+            .subscribe();
+
+        Consumer<String> previous = consumers.put(subscriptionName, consumer);
+        if (previous != null) {
+            previous.close();
+        }
+    }
+
+    @GetMapping("/subscriptions/{subscriptionName}/records")
+    public List<String> pollSubscription(@PathVariable String subscriptionName, @RequestParam(defaultValue = "1000") int durationMs) throws PulsarClientException {
+        Consumer<String> consumer = consumers.get(subscriptionName);
+        if(consumer == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Subscription not found!");
+        }
+        List<String> messages = new ArrayList<>();
+        Instant start = Instant.now();
+        while(true) {
+            Message<String> message = consumer.receive(0, TimeUnit.MILLISECONDS);
+            if (message != null) {
+                messages.add(message.getValue());
+                consumer.acknowledgeCumulative(message);
+            } else {
+                break;
+            }
+        }
+        if (messages.size() == 0) {
+            int timeoutMs = (int) (durationMs + start.toEpochMilli() - Instant.now().toEpochMilli());
+            if (timeoutMs > 0) {
+                Message<String> message = consumer.receive(timeoutMs, TimeUnit.MILLISECONDS);
+                if (message != null) {
+                    messages.add(message.getValue());
+                }
+            }
+        }
+        return messages;
+    }
+
+}

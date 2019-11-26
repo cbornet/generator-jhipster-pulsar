@@ -1,8 +1,9 @@
 const chalk = require('chalk');
-const packagejs = require('../../package.json');
 const semver = require('semver');
 const BaseGenerator = require('generator-jhipster/generators/generator-base');
 const jhipsterConstants = require('generator-jhipster/generators/generator-constants');
+const yaml = require('js-yaml');
+const packagejs = require('../../package.json');
 
 module.exports = class extends BaseGenerator {
     get initializing() {
@@ -13,7 +14,7 @@ module.exports = class extends BaseGenerator {
                 }
             },
             readConfig() {
-                this.jhipsterAppConfig = this.getJhipsterAppConfig();
+                this.jhipsterAppConfig = this.getAllJhipsterConfig();
                 if (!this.jhipsterAppConfig) {
                     this.error('Can\'t read .yo-rc.json');
                 }
@@ -36,25 +37,6 @@ module.exports = class extends BaseGenerator {
         };
     }
 
-    prompting() {
-        const prompts = [
-            {
-                type: 'input',
-                name: 'message',
-                message: 'Please put something',
-                default: 'hello world!'
-            }
-        ];
-
-        const done = this.async();
-        this.prompt(prompts).then((props) => {
-            this.props = props;
-            // To access props later use this.props.someOption;
-
-            done();
-        });
-    }
-
     writing() {
         // function to use directly template
         this.template = function (source, destination) {
@@ -65,89 +47,56 @@ module.exports = class extends BaseGenerator {
             );
         };
 
+        this.writeAppConfig = function (filePath) {
+            const configPulsar = `
+pulsar:
+  client:
+    serviceUrl: pulsar://localhost:6650
+`;
+
+            const appConfigFileContent = this.fs.read(filePath);
+            const appConfig = yaml.safeLoad(appConfigFileContent);
+            if (!appConfig.pulsar) {
+                this.fs.write(filePath, appConfigFileContent + configPulsar);
+            }
+        };
+
         // read config from .yo-rc.json
-        this.baseName = this.jhipsterAppConfig.baseName;
         this.packageName = this.jhipsterAppConfig.packageName;
         this.packageFolder = this.jhipsterAppConfig.packageFolder;
-        this.clientFramework = this.jhipsterAppConfig.clientFramework;
-        this.clientPackageManager = this.jhipsterAppConfig.clientPackageManager;
         this.buildTool = this.jhipsterAppConfig.buildTool;
-
-        // use function in generator-base.js from generator-jhipster
-        this.angularAppName = this.getAngularAppName();
 
         // use constants from generator-constants.js
         const javaDir = `${jhipsterConstants.SERVER_MAIN_SRC_DIR + this.packageFolder}/`;
+        const testDir = `${jhipsterConstants.SERVER_TEST_SRC_DIR + this.packageFolder}/`;
+        const dockerDir = jhipsterConstants.DOCKER_DIR;
         const resourceDir = jhipsterConstants.SERVER_MAIN_RES_DIR;
-        const webappDir = jhipsterConstants.CLIENT_MAIN_SRC_DIR;
+        const testResourceDir = jhipsterConstants.SERVER_TEST_RES_DIR;
 
-        // variable from questions
-        this.message = this.props.message;
+        this.template('pulsar.yml.ejs', `${dockerDir}/pulsar.yml`);
+        this.template('PulsarProperties.java.ejs', `${javaDir}/config/PulsarProperties.java`);
+        this.template('PulsarResource.java.ejs', `${javaDir}/web/rest/PulsarResource.java`);
+        this.template('PulsarResourceTest.java.ejs', `${testDir}/web/rest/PulsarResourceTest.java`);
 
-        // show all variables
-        this.log('\n--- some config read from config ---');
-        this.log(`baseName=${this.baseName}`);
-        this.log(`packageName=${this.packageName}`);
-        this.log(`clientFramework=${this.clientFramework}`);
-        this.log(`clientPackageManager=${this.clientPackageManager}`);
-        this.log(`buildTool=${this.buildTool}`);
-
-        this.log('\n--- some function ---');
-        this.log(`angularAppName=${this.angularAppName}`);
-
-        this.log('\n--- some const ---');
-        this.log(`javaDir=${javaDir}`);
-        this.log(`resourceDir=${resourceDir}`);
-        this.log(`webappDir=${webappDir}`);
-
-        this.log('\n--- variables from questions ---');
-        this.log(`\nmessage=${this.message}`);
-        this.log('------\n');
-
-        if (this.clientFramework === 'angular1') {
-            this.template('dummy.txt', 'dummy-angular1.txt');
-        }
-        if (this.clientFramework === 'angularX' || this.clientFramework === 'angular2') {
-            this.template('dummy.txt', 'dummy-angularX.txt');
-        }
         if (this.buildTool === 'maven') {
-            this.template('dummy.txt', 'dummy-maven.txt');
+            this.addMavenDependency('org.apache.pulsar', 'pulsar-client', '2.4.1');
+            this.addMavenDependency('org.testcontainers', 'pulsar', '1.12.3', '            <scope>test</scope>');
+        } else if (this.buildTool === 'gradle') {
+            this.addGradleDependency('compile', 'org.apache.pulsar', 'pulsar-client', '2.4.1');
+            this.addGradleDependency('testCompile', 'org.testcontainers', 'pulsar', '1.12.3');
         }
-        if (this.buildTool === 'gradle') {
-            this.template('dummy.txt', 'dummy-gradle.txt');
-        }
-    }
 
-    install() {
-        let logMsg =
-            `To install your dependencies manually, run: ${chalk.yellow.bold(`${this.clientPackageManager} install`)}`;
+        /* const configPulsar =
+            'pulsar:' + '\n' +
+            '  client:' + '\n' +
+            '    serviceUrl: pulsar://localhost:6650' + '\n';
 
-        if (this.clientFramework === 'angular1') {
-            logMsg =
-                `To install your dependencies manually, run: ${chalk.yellow.bold(`${this.clientPackageManager} install & bower install`)}`;
-        }
-        const injectDependenciesAndConstants = (err) => {
-            if (err) {
-                this.warning('Install of dependencies failed!');
-                this.log(logMsg);
-            } else if (this.clientFramework === 'angular1') {
-                this.spawnCommand('gulp', ['install']);
-            }
-        };
-        const installConfig = {
-            bower: this.clientFramework === 'angular1',
-            npm: this.clientPackageManager !== 'yarn',
-            yarn: this.clientPackageManager === 'yarn',
-            callback: injectDependenciesAndConstants
-        };
-        if (this.options['skip-install']) {
-            this.log(logMsg);
-        } else {
-            this.installDependencies(installConfig);
-        }
-    }
-
-    end() {
-        this.log('End of pulsar generator');
+        const appConfigFileContent = this.fs.read(`${resourceDir}/config/application.yml`);
+        const appConfig = yaml.safeLoad(appConfigFileContent);
+        if (!appConfig.pulsar) {
+            this.fs.write(`${resourceDir}/config/application.yml`, appConfigFileContent + configPulsar);
+        } */
+        this.writeAppConfig(`${resourceDir}/config/application.yml`);
+        this.writeAppConfig(`${testResourceDir}/config/application.yml`);
     }
 };
