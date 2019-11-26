@@ -5,7 +5,9 @@
   "keywords": [
     "yeoman-generator",
     "jhipster-module",
-    "jhipster-5"
+    "jhipster-5",
+    "pulsar",
+    "messaging"
   ],
   "homepage": "https://github.com/cbornet/generator-jhipster-pulsar",
   "author": {
