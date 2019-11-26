@@ -12,7 +12,7 @@ jobs:
                   node-version: 12.13.0
             - name: Install node.js packages
               run: npm install
-            - name: Install node.js packages
+            - name: Link module
               run: npm link
             - name: Run generator tests
               run: npm test

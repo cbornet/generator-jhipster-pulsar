@@ -73,10 +73,10 @@ pulsar:
         const resourceDir = jhipsterConstants.SERVER_MAIN_RES_DIR;
         const testResourceDir = jhipsterConstants.SERVER_TEST_RES_DIR;
 
-        this.template('pulsar.yml.ejs', `${dockerDir}/pulsar.yml`);
-        this.template('PulsarProperties.java.ejs', `${javaDir}/config/PulsarProperties.java`);
-        this.template('PulsarResource.java.ejs', `${javaDir}/web/rest/PulsarResource.java`);
-        this.template('PulsarResourceTest.java.ejs', `${testDir}/web/rest/PulsarResourceTest.java`);
+        this.template('pulsar.yml.ejs', `${dockerDir}pulsar.yml`);
+        this.template('PulsarProperties.java.ejs', `${javaDir}config/PulsarProperties.java`);
+        this.template('PulsarResource.java.ejs', `${javaDir}web/rest/PulsarResource.java`);
+        this.template('PulsarResourceTest.java.ejs', `${testDir}web/rest/PulsarResourceTest.java`);
 
         if (this.buildTool === 'maven') {
             this.addMavenDependency('org.apache.pulsar', 'pulsar-client', '2.4.1');
@@ -85,18 +85,7 @@ pulsar:
             this.addGradleDependency('compile', 'org.apache.pulsar', 'pulsar-client', '2.4.1');
             this.addGradleDependency('testCompile', 'org.testcontainers', 'pulsar', '1.12.3');
         }
-
-        /* const configPulsar =
-            'pulsar:' + '\n' +
-            '  client:' + '\n' +
-            '    serviceUrl: pulsar://localhost:6650' + '\n';
-
-        const appConfigFileContent = this.fs.read(`${resourceDir}/config/application.yml`);
-        const appConfig = yaml.safeLoad(appConfigFileContent);
-        if (!appConfig.pulsar) {
-            this.fs.write(`${resourceDir}/config/application.yml`, appConfigFileContent + configPulsar);
-        } */
-        this.writeAppConfig(`${resourceDir}/config/application.yml`);
-        this.writeAppConfig(`${testResourceDir}/config/application.yml`);
+        this.writeAppConfig(`${resourceDir}config/application.yml`);
+        this.writeAppConfig(`${testResourceDir}config/application.yml`);
     }
 };
