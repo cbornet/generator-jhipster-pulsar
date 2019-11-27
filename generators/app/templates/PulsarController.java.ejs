@@ -18,15 +18,15 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/pulsar")
-public class PulsarResource {
+public class PulsarController {
 
-    private final Logger log = LoggerFactory.getLogger(PulsarResource.class);
+    private final Logger log = LoggerFactory.getLogger(PulsarController.class);
 
     private final PulsarProperties pulsarProperties;
     private PulsarClient client;
     private Map<String, Consumer<String>> consumers = new HashMap<>();
 
-    PulsarResource(PulsarProperties pulsarProperties) throws PulsarClientException {
+    PulsarController(PulsarProperties pulsarProperties) throws PulsarClientException {
         this.pulsarProperties = pulsarProperties;
         this.client = PulsarClient.builder()
             .loadConf(pulsarProperties.getClientProps())

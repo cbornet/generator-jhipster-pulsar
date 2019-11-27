@@ -75,8 +75,8 @@ pulsar:
 
         this.template('pulsar.yml.ejs', `${dockerDir}pulsar.yml`);
         this.template('PulsarProperties.java.ejs', `${javaDir}config/PulsarProperties.java`);
-        this.template('PulsarResource.java.ejs', `${javaDir}web/rest/PulsarResource.java`);
-        this.template('PulsarResourceTest.java.ejs', `${testDir}web/rest/PulsarResourceTest.java`);
+        this.template('PulsarController.java.ejs', `${javaDir}web/rest/PulsarController.java`);
+        this.template('PulsarControllerTest.java.ejs', `${testDir}web/rest/PulsarControllerTest.java`);
 
         if (this.buildTool === 'maven') {
             this.addMavenDependency('org.apache.pulsar', 'pulsar-client', '2.4.1');

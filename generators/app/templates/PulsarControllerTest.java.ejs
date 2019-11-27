@@ -28,13 +28,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class PulsarResourceTest {
+class PulsarControllerTest {
 
     private static PulsarContainer pulsarContainer;
 
     private MockMvc restMockMvc;
     private PulsarClient client;
-    private PulsarResource pulsarResource;
+    private PulsarController pulsarController;
 
     @BeforeAll
     static void startServer() {
@@ -53,13 +53,13 @@ class PulsarResourceTest {
         consumerProps.put("consumerName", "default-consumer");
         pulsarProperties.setConsumer(consumerProps);
 
-        pulsarResource = new PulsarResource(pulsarProperties);
+        pulsarController = new PulsarController(pulsarProperties);
 
         this.client = PulsarClient.builder()
             .serviceUrl(pulsarContainer.getPulsarBrokerUrl())
             .build();
 
-        restMockMvc = MockMvcBuilders.standaloneSetup(pulsarResource)
+        restMockMvc = MockMvcBuilders.standaloneSetup(pulsarController)
             .build();
     }
 
@@ -84,9 +84,9 @@ class PulsarResourceTest {
         restMockMvc.perform(put("/api/pulsar/subscriptions/subscription-create?topic=topic-create&topic=topic-create2&consumerName=consumer-create&subscriptionType=Shared"))
             .andExpect(status().isOk());
 
-        Field consumersField = ReflectionUtils.findField(PulsarResource.class, "consumers");
+        Field consumersField = ReflectionUtils.findField(PulsarController.class, "consumers");
         ReflectionUtils.makeAccessible(consumersField);
-        Map<String, Consumer<String>> consumers = (Map<String, Consumer<String>>)consumersField.get(pulsarResource);
+        Map<String, Consumer<String>> consumers = (Map<String, Consumer<String>>)consumersField.get(pulsarController);
         assertThat(consumers).containsKey("subscription-create");
         Consumer<String> consumer = consumers.get("subscription-create");
         assertThat(consumer).isInstanceOf(MultiTopicsConsumerImpl.class);
@@ -108,9 +108,9 @@ class PulsarResourceTest {
             .subscribe();
         Map<String, Consumer<String>> consumers = new HashMap<>();
         consumers.put("subscription-consume", consumer);
-        Field consumersField = ReflectionUtils.findField(PulsarResource.class, "consumers");
+        Field consumersField = ReflectionUtils.findField(PulsarController.class, "consumers");
         ReflectionUtils.makeAccessible(consumersField);
-        ReflectionUtils.setField(consumersField, pulsarResource, consumers);
+        ReflectionUtils.setField(consumersField, pulsarController, consumers);
 
         Producer<String> producer = client.newProducer(Schema.STRING)
             .topic("topic-consume")
@@ -137,9 +137,9 @@ class PulsarResourceTest {
             .subscribe();
         Map<String, Consumer<String>> consumers = new HashMap<>();
         consumers.put("subscription-no-consume", consumer);
-        Field consumersField = ReflectionUtils.findField(PulsarResource.class, "consumers");
+        Field consumersField = ReflectionUtils.findField(PulsarController.class, "consumers");
         ReflectionUtils.makeAccessible(consumersField);
-        ReflectionUtils.setField(consumersField, pulsarResource, consumers);
+        ReflectionUtils.setField(consumersField, pulsarController, consumers);
 
         long before = Instant.now().toEpochMilli();
 

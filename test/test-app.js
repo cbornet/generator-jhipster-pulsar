@@ -22,8 +22,8 @@ describe('JHipster generator pulsar', () => {
         assert.file([
             'src/main/docker/pulsar.yml',
             'src/main/java/com/mycompany/myapp/config/PulsarProperties.java',
-            'src/main/java/com/mycompany/myapp/web/rest/PulsarResource.java',
-            'src/test/java/com/mycompany/myapp/web/rest/PulsarResourceTest.java',
+            'src/main/java/com/mycompany/myapp/web/rest/PulsarController.java',
+            'src/test/java/com/mycompany/myapp/web/rest/PulsarControllerTest.java',
         ]);
         const expectedConfig = `# Test yaml
 foo: bar

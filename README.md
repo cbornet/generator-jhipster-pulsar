@@ -44,6 +44,25 @@ yarn global upgrade generator-jhipster-pulsar
 
 # Usage
 
+This module generates:
+
+* a docker-compose file that can be used in development to spawn a dockerized pulsar instance. To launch it:
+```
+docker-compose -f src/main/docker/pulsar.yml up -d
+```
+* an HTTP endpoint to publish messages:
+```
+curl -X POST "http://localhost:8080/api/pulsar/publish/my-topic?message=test"
+```
+* an HTTP endpoint to create a subscription and susbscribe to a topic:
+```
+curl -X PUT "http://localhost:8080/api/pulsar/subscriptions/my-subscription?topic=my-topic"
+```
+* an HTTP endpoint to read messages from a subscription:
+```
+curl "http://localhost:8080/api/pulsar/subscriptions/my-subscription/records"
+```
+
 # License
 
 Apache-2.0 © [Christophe Bornet](https://github.com/cbornet)
