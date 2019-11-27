@@ -2,7 +2,7 @@ name: Build
 on: [push, pull_request]
 jobs:
     unit-tests:
-        name: generator-jhipster-pulsar test suite
+        name: generator-jhipster-pulsar unit tests
         runs-on: ubuntu-latest
         timeout-minutes: 40
         steps:
@@ -42,5 +42,5 @@ jobs:
                 yo jhipster-pulsar --force
               working-directory: ./test/templates/${{ matrix.sample }}
             - name: Run integration-tests
-              run: ./mvnw -ntp verify
+              run: '[ -f ./mvnw ] && ./mvnw -ntp verify || ./gradlew test integrationTest'
               working-directory: ./test/templates/${{ matrix.sample }}
