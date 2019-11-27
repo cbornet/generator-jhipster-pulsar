@@ -1,20 +1,17 @@
 # generator-jhipster-pulsar
 [![NPM version][npm-image]][npm-url] [![Build Status][github-image]][github-url] [![Dependency Status][daviddm-image]][daviddm-url]
-> JHipster module, Module to support Apache Pulsar in your JHipster app
+> JHipster module to support Apache Pulsar in your JHipster app
 
 # Introduction
 
 This is a [JHipster](https://www.jhipster.tech/) module, that is meant to be used in a JHipster application.
+It provides integration with the [Apache Pulsar](https://pulsar.apache.org/) messaging system.
 
 # Prerequisites
 
-As this is a [JHipster](https://www.jhipster.tech/) module, we expect you have JHipster and its related tools already installed:
-
-- [Installing JHipster](https://www.jhipster.tech/installation/)
+As this is a [JHipster](https://www.jhipster.tech/) module, we expect you have JHipster and its related tools already installed (see [installing JHipster](https://www.jhipster.tech/installation/))
 
 # Installation
-
-## With NPM
 
 To install this module:
 
@@ -28,23 +25,13 @@ To update this module:
 npm update -g generator-jhipster-pulsar
 ```
 
-## With Yarn
-
-To install this module:
-
-```bash
-yarn global add generator-jhipster-pulsar
-```
-
-To update this module:
-
-```bash
-yarn global upgrade generator-jhipster-pulsar
-```
-
 # Usage
+At the root of your JHipster app folder, enter:
+```
+yo jhipster-pulsar
+```
 
-This module generates:
+This will generate:
 
 * a docker-compose file that can be used in development to spawn a dockerized pulsar instance. To launch it:
 ```
@@ -62,6 +49,11 @@ curl -X PUT "http://localhost:8080/api/pulsar/subscriptions/my-subscription?topi
 ```
 curl "http://localhost:8080/api/pulsar/subscriptions/my-subscription/records"
 ```
+* an HTTP endpoint to delete a subscription:
+```
+curl -X DELETE "http://localhost:8080/api/pulsar/subscriptions/my-subscription"
+```
+* integration tests using the [Pulsar Testcontainers module](https://www.testcontainers.org/modules/pulsar/)
 
 # License
 
