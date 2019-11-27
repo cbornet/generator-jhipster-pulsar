@@ -82,8 +82,8 @@ pulsar:
             this.addMavenDependency('org.apache.pulsar', 'pulsar-client', '2.4.1');
             this.addMavenDependency('org.testcontainers', 'pulsar', '1.12.3', '            <scope>test</scope>');
         } else if (this.buildTool === 'gradle') {
-            this.addGradleDependency('compile', 'org.apache.pulsar', 'pulsar-client', '2.4.1');
-            this.addGradleDependency('testCompile', 'org.testcontainers', 'pulsar', '1.12.3');
+            this.addGradleDependency('implementation', 'org.apache.pulsar', 'pulsar-client', '2.4.1');
+            this.addGradleDependency('testImplementation', 'org.testcontainers', 'pulsar', '1.12.3');
         }
         this.writeAppConfig(`${resourceDir}config/application.yml`);
         this.writeAppConfig(`${testResourceDir}config/application.yml`);

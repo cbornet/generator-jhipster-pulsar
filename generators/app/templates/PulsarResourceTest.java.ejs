@@ -132,18 +132,18 @@ class PulsarResourceTest {
     @Test
     void consumesSubscriptionNoMessage() throws Exception {
         Consumer<String> consumer = client.newConsumer(Schema.STRING)
-            .subscriptionName("subscription-consume")
-            .topic("topic-consume")
+            .subscriptionName("subscription-no-consume")
+            .topic("topic-no-consume")
             .subscribe();
         Map<String, Consumer<String>> consumers = new HashMap<>();
-        consumers.put("subscription-consume", consumer);
+        consumers.put("subscription-no-consume", consumer);
         Field consumersField = ReflectionUtils.findField(PulsarResource.class, "consumers");
         ReflectionUtils.makeAccessible(consumersField);
         ReflectionUtils.setField(consumersField, pulsarResource, consumers);
 
         long before = Instant.now().toEpochMilli();
 
-        restMockMvc.perform(get("/api/pulsar/subscriptions/subscription-consume/records?durationMs=100"))
+        restMockMvc.perform(get("/api/pulsar/subscriptions/subscription-no-consume/records?durationMs=100"))
             .andExpect(status().isOk())
             .andExpect(content().string("[]"));
 
