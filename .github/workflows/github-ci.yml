@@ -21,7 +21,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                sample: [maven]
+                sample: [maven, gradle]
         timeout-minutes: 40
         steps:
             - uses: actions/checkout@v1
