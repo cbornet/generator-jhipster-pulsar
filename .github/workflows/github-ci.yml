@@ -29,7 +29,13 @@ jobs:
               run: npm install
             - name: Link module
               run: npm link
+            - name: Install tools
+              run: npm install -g yo
             - name: Install JHipster
               run: npm install -g generator-jhipster
-            - name: Run integration tests
-              run: bash test/scripts/generate-project.sh
+            - name: Generate project
+              run: cd test/templates/maven & jhipster --with-entities --no-insight
+            - name: Run JHipster-Pulsar module
+              run: yo jhipster-pulsar
+            - name: Run integration-tests
+              run: ./mvnw -ntp verify
