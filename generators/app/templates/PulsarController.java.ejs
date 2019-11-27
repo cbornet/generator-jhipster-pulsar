@@ -60,16 +60,17 @@ public class PulsarController {
         Map<String, Object> consumerProps = pulsarProperties.getConsumerProps();
         consumerProps.putAll(params);
         consumerProps.remove("topic");
+
+        Consumer<String> previous = consumers.get(subscriptionName);
+        if (previous != null) {
+            previous.close();
+        }
         Consumer<String> consumer = client.newConsumer(Schema.STRING)
             .loadConf(consumerProps)
             .subscriptionName(subscriptionName)
             .topics(topics)
             .subscribe();
-
-        Consumer<String> previous = consumers.put(subscriptionName, consumer);
-        if (previous != null) {
-            previous.close();
-        }
+        consumers.put(subscriptionName, consumer);
     }
 
     @GetMapping("/subscriptions/{subscriptionName}/records")
@@ -99,6 +100,16 @@ public class PulsarController {
             }
         }
         return messages;
+    }
+
+    @DeleteMapping("/subscriptions/{subscriptionName}")
+    public void deleteSubscription(@PathVariable String subscriptionName) throws PulsarClientException {
+        Consumer<String> consumer = consumers.get(subscriptionName);
+        if (consumer != null) {
+            consumer.close();
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Subscription not found!");
+        }
     }
 
 }

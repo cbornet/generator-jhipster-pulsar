@@ -2,7 +2,6 @@ package <%= packageName %>.web.rest;
 
 import <%= packageName %>.config.PulsarProperties;
 import org.apache.pulsar.client.api.*;
-import org.apache.pulsar.client.impl.ConnectionPool;
 import org.apache.pulsar.client.impl.MultiTopicsConsumerImpl;
 import org.apache.pulsar.client.impl.conf.ConsumerConfigurationData;
 import org.junit.jupiter.api.BeforeAll;
@@ -14,16 +13,12 @@ import org.springframework.util.ReflectionUtils;
 import org.testcontainers.containers.PulsarContainer;
 
 import java.lang.reflect.Field;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -133,7 +128,7 @@ class PulsarControllerTest {
     void consumesSubscriptionNoMessage() throws Exception {
         Consumer<String> consumer = client.newConsumer(Schema.STRING)
             .subscriptionName("subscription-no-consume")
-            .topic("topic-no-consume")
+            .topic("topic-consume")
             .subscribe();
         Map<String, Consumer<String>> consumers = new HashMap<>();
         consumers.put("subscription-no-consume", consumer);
@@ -150,4 +145,33 @@ class PulsarControllerTest {
         assertThat(Instant.now().toEpochMilli() - before).isGreaterThan(100L);
         consumer.close();
     }
+
+    @Test
+    void consumesSubscriptionNotFound() throws Exception {
+        restMockMvc.perform(get("/api/pulsar/subscriptions/subscription-not-found/records"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deletesSubscription() throws Exception {
+        Consumer<String> consumer = client.newConsumer(Schema.STRING)
+            .subscriptionName("subscription-delete")
+            .topic("topic-delete")
+            .subscribe();
+        Map<String, Consumer<String>> consumers = new HashMap<>();
+        consumers.put("subscription-delete", consumer);
+        Field consumersField = ReflectionUtils.findField(PulsarController.class, "consumers");
+        ReflectionUtils.makeAccessible(consumersField);
+        ReflectionUtils.setField(consumersField, pulsarController, consumers);
+
+        restMockMvc.perform(delete("/api/pulsar/subscriptions/subscription-delete"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void deletesSubscriptionNotFound() throws Exception {
+        restMockMvc.perform(delete("/api/pulsar/subscriptions/subscription-not-found"))
+            .andExpect(status().isNotFound());
+    }
+
 }
