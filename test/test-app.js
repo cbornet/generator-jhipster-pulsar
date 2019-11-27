@@ -25,5 +25,14 @@ describe('JHipster generator pulsar', () => {
             'src/main/java/com/mycompany/myapp/web/rest/PulsarResource.java',
             'src/test/java/com/mycompany/myapp/web/rest/PulsarResourceTest.java',
         ]);
+        const expectedConfig = `# Test yaml
+foo: bar
+
+pulsar:
+  client:
+    serviceUrl: pulsar://localhost:6650
+`;
+        assert.equalsFileContent('src/main/resources/config/application.yml', expectedConfig);
+        assert.equalsFileContent('src/test/resources/config/application.yml', expectedConfig);
     });
 });
