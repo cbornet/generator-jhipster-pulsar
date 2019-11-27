@@ -33,6 +33,15 @@ public class PulsarController {
             .build();
     }
 
+    /**
+     * {@code POST  /publish/:topic} : send a message to a Pulsar topic
+     *
+     * @param topic Pulsar topic to send the message to
+     * @param message the string message to send
+     * @param key optional partition key
+     * @return the message id encoded in base64
+     * @throws PulsarClientException if the client failed to communicate with the broker
+     */
     @PostMapping("/publish/{topic}")
     public String sendMessageToPulsarTopic(@PathVariable String topic,
                                           @RequestParam("message") String message,
@@ -52,6 +61,15 @@ public class PulsarController {
         return Base64.toBase64String(messageId.toByteArray());
     }
 
+    /**
+     * {@code PUT  /subscriptions/:subscriptionName} : create a subscription and subscribe to a topic
+     *
+     * @param subscriptionName name of the subscription
+     * @param topics list of topics to subscribe to
+     * @param params query params. By default, the properties from application.yml are used to configure the consumer.
+     *               Query params can be passed to the endpoint to override the default configuration (eg. /subscriptions/my-sub?subscriptionType=Shared)
+     * @throws PulsarClientException if the client failed to communicate with the broker
+     */
     @PutMapping("/subscriptions/{subscriptionName}")
     public void createSubscription(@PathVariable String subscriptionName,
                                    @RequestParam("topic") List<String> topics,
@@ -73,6 +91,14 @@ public class PulsarController {
         consumers.put(subscriptionName, consumer);
     }
 
+    /**
+     * {@code GET  /subscriptions/:subscriptionName/records} : poll messages from a subscription
+     *
+     * @param subscriptionName name of the subscription
+     * @param durationMs duration of polling in ms if there's no message already available
+     * @return the list of polled messages
+     * @throws PulsarClientException if the client failed to communicate with the broker
+     */
     @GetMapping("/subscriptions/{subscriptionName}/records")
     public List<String> pollSubscription(@PathVariable String subscriptionName, @RequestParam(defaultValue = "1000") int durationMs) throws PulsarClientException {
         Consumer<String> consumer = consumers.get(subscriptionName);
@@ -102,6 +128,12 @@ public class PulsarController {
         return messages;
     }
 
+    /**
+     * {@code DELETE  /subscriptions/:subscriptionName} : delete a subscription
+     * 
+     * @param subscriptionName name of the subscription
+     * @throws PulsarClientException if the client failed to communicate with the broker
+     */
     @DeleteMapping("/subscriptions/{subscriptionName}")
     public void deleteSubscription(@PathVariable String subscriptionName) throws PulsarClientException {
         Consumer<String> consumer = consumers.get(subscriptionName);
