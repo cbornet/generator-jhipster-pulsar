@@ -34,8 +34,10 @@ jobs:
             - name: Install JHipster
               run: npm install -g generator-jhipster
             - name: Generate project
-              run: cd test/templates/maven & jhipster --with-entities --no-insight
-            - name: Run JHipster-Pulsar module
-              run: pwd & yo jhipster-pulsar --force
+              run: |
+                jhipster --with-entities --no-insight
+                yo jhipster-pulsar --force
+              working-directory: ./test/templates/maven
             - name: Run integration-tests
               run: ./mvnw -ntp verify
+              working-directory: ./test/templates/maven
