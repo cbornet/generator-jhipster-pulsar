@@ -36,6 +36,7 @@
     ],
     "blueprints": [],
     "skipClient": true,
-    "skipUserManagement": true
+    "skipUserManagement": true,
+    "enableHibernateCache": false
   }
 }
