@@ -19,6 +19,9 @@ jobs:
     integration-tests:
         name: generator-jhipster-pulsar integration tests
         runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                sample: [maven]
         timeout-minutes: 40
         steps:
             - uses: actions/checkout@v1
@@ -37,7 +40,7 @@ jobs:
               run: |
                 jhipster --with-entities --no-insight
                 yo jhipster-pulsar --force
-              working-directory: ./test/templates/maven
+              working-directory: ./test/templates/${{ matrix.sample }}
             - name: Run integration-tests
               run: ./mvnw -ntp verify
-              working-directory: ./test/templates/maven
+              working-directory: ./test/templates/${{ matrix.sample }}
