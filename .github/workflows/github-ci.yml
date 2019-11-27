@@ -36,6 +36,6 @@ jobs:
             - name: Generate project
               run: cd test/templates/maven & jhipster --with-entities --no-insight
             - name: Run JHipster-Pulsar module
-              run: yo jhipster-pulsar
+              run: pwd & yo jhipster-pulsar --force
             - name: Run integration-tests
               run: ./mvnw -ntp verify
