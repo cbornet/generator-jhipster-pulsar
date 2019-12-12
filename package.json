@@ -1,6 +1,6 @@
 {
   "name": "generator-jhipster-pulsar",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Module to support Apache Pulsar in your JHipster app",
   "keywords": [
     "yeoman-generator",
