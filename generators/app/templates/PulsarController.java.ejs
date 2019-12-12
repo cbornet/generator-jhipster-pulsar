@@ -5,15 +5,13 @@ import org.apache.pulsar.client.api.*;
 import org.bouncycastle.util.encoders.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -24,7 +22,7 @@ public class PulsarController {
 
     private final PulsarProperties pulsarProperties;
     private PulsarClient client;
-    private Map<String, Consumer<String>> consumers = new HashMap<>();
+    private ExecutorService sseExecutorService = Executors.newCachedThreadPool();
 
     PulsarController(PulsarProperties pulsarProperties) throws PulsarClientException {
         this.pulsarProperties = pulsarProperties;
@@ -44,8 +42,8 @@ public class PulsarController {
      */
     @PostMapping("/publish/{topic}")
     public String sendMessageToPulsarTopic(@PathVariable String topic,
-                                          @RequestParam("message") String message,
-                                          @RequestParam(value = "key", required = false) String key) throws PulsarClientException {
+                                           @RequestParam("message") String message,
+                                           @RequestParam(value = "key", required = false) String key) throws PulsarClientException {
         log.debug("REST request to send to Pulsar topic {} with key {} the message : {}", topic, key, message);
         Producer<String> producer = client.newProducer(Schema.STRING)
             .loadConf(pulsarProperties.getProducerProps())
@@ -62,86 +60,62 @@ public class PulsarController {
     }
 
     /**
-     * {@code PUT  /subscriptions/:subscriptionName} : create a subscription and subscribe to a topic
+     * {@code PUT  /consume/:subscriptionName} : create a consumer and get the messages as an SSE stream
      *
      * @param subscriptionName name of the subscription
      * @param topics list of topics to subscribe to
-     * @param params query params. By default, the properties from application.yml are used to configure the consumer.
-     *               Query params can be passed to the endpoint to override the default configuration (eg. /subscriptions/my-sub?subscriptionType=Shared)
-     * @throws PulsarClientException if the client failed to communicate with the broker
+     * @param consumerParams query params. By default, the properties from application.yml are used to configure the consumer.
+     *                       Query params can be passed to the endpoint to override the default configuration
+     *                       (eg. /consume/my-sub?subscriptionType=Shared)
+     * @return an SSE stream of the Pulsar message values
      */
-    @PutMapping("/subscriptions/{subscriptionName}")
-    public void createSubscription(@PathVariable String subscriptionName,
-                                   @RequestParam("topic") List<String> topics,
-                                   @RequestParam Map<String, String> params) throws PulsarClientException {
-        log.debug("REST request to create Pulsar subscription {} on topics {}", subscriptionName, topics);
+    @GetMapping("/consume/{subscriptionName}")
+    public SseEmitter consume(@PathVariable String subscriptionName,
+                              @RequestParam("topic") List<String> topics,
+                              @RequestParam Map<String, String> consumerParams) {
+        log.debug("REST request to consume records from Pulsar topics {}", topics);
         Map<String, Object> consumerProps = pulsarProperties.getConsumerProps();
-        consumerProps.putAll(params);
+        consumerProps.putAll(consumerParams);
         consumerProps.remove("topic");
 
-        Consumer<String> previous = consumers.get(subscriptionName);
-        if (previous != null) {
-            previous.close();
-        }
-        Consumer<String> consumer = client.newConsumer(Schema.STRING)
-            .loadConf(consumerProps)
-            .subscriptionName(subscriptionName)
-            .topics(topics)
-            .subscribe();
-        consumers.put(subscriptionName, consumer);
-    }
-
-    /**
-     * {@code GET  /subscriptions/:subscriptionName/records} : poll messages from a subscription
-     *
-     * @param subscriptionName name of the subscription
-     * @param durationMs duration of polling in ms if there's no message already available
-     * @return the list of polled messages
-     * @throws PulsarClientException if the client failed to communicate with the broker
-     */
-    @GetMapping("/subscriptions/{subscriptionName}/records")
-    public List<String> pollSubscription(@PathVariable String subscriptionName, @RequestParam(defaultValue = "1000") int durationMs) throws PulsarClientException {
-        Consumer<String> consumer = consumers.get(subscriptionName);
-        if(consumer == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Subscription not found!");
-        }
-        List<String> messages = new ArrayList<>();
-        Instant start = Instant.now();
-        while(true) {
-            Message<String> message = consumer.receive(0, TimeUnit.MILLISECONDS);
-            if (message != null) {
-                messages.add(message.getValue());
-                consumer.acknowledgeCumulative(message);
-            } else {
-                break;
-            }
-        }
-        if (messages.size() == 0) {
-            int timeoutMs = (int) (durationMs + start.toEpochMilli() - Instant.now().toEpochMilli());
-            if (timeoutMs > 0) {
-                Message<String> message = consumer.receive(timeoutMs, TimeUnit.MILLISECONDS);
-                if (message != null) {
-                    messages.add(message.getValue());
+        SseEmitter emitter = new SseEmitter(0L);
+        sseExecutorService.execute(() -> {
+            try {
+                Consumer<String> consumer = client.newConsumer(Schema.STRING)
+                    .loadConf(consumerProps)
+                    .subscriptionName(subscriptionName)
+                    .topics(topics)
+                    .subscribe();
+                emitter.onCompletion(() -> {
+                    try {
+                        consumer.close();
+                    } catch (PulsarClientException e) {
+                        log.error("Couldn't close consumer", e);
+                    }
+                });
+                boolean exitLoop = false;
+                while (!exitLoop) {
+                    try {
+                        Message<String> message = consumer.receive(5, TimeUnit.SECONDS);
+                        if (message == null) {
+                            emitter.send(SseEmitter.event().comment(""));
+                        } else {
+                            emitter.send(message.getValue());
+                        }
+                    } catch (Exception ex) {
+                        log.trace("Complete with error {}", ex.getMessage(), ex);
+                        emitter.completeWithError(ex);
+                        exitLoop = true;
+                    }
                 }
+                consumer.close();
+            } catch (PulsarClientException e) {
+                log.error("Communication with Pulsar failed", e);
+            } finally {
+                emitter.complete();
             }
-        }
-        return messages;
-    }
-
-    /**
-     * {@code DELETE  /subscriptions/:subscriptionName} : delete a subscription
-     *
-     * @param subscriptionName name of the subscription
-     * @throws PulsarClientException if the client failed to communicate with the broker
-     */
-    @DeleteMapping("/subscriptions/{subscriptionName}")
-    public void deleteSubscription(@PathVariable String subscriptionName) throws PulsarClientException {
-        Consumer<String> consumer = consumers.get(subscriptionName);
-        if (consumer != null) {
-            consumer.close();
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Subscription not found!");
-        }
+        });
+        return emitter;
     }
 
 }
