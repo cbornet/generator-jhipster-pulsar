@@ -41,17 +41,9 @@ docker-compose -f src/main/docker/pulsar.yml up -d
 ```
 curl -X POST "http://localhost:8080/api/pulsar/publish/my-topic?message=test"
 ```
-* an HTTP endpoint to create a subscription and susbscribe to a topic:
+* a Server-Sent-Event endpoint to consume messages as a stream:
 ```
-curl -X PUT "http://localhost:8080/api/pulsar/subscriptions/my-subscription?topic=my-topic"
-```
-* an HTTP endpoint to read messages from a subscription:
-```
-curl "http://localhost:8080/api/pulsar/subscriptions/my-subscription/records"
-```
-* an HTTP endpoint to delete a subscription:
-```
-curl -X DELETE "http://localhost:8080/api/pulsar/subscriptions/my-subscription"
+curl "http://localhost:8080/api/pulsar/consume/my-subscription?topic=my-topic"
 ```
 * integration tests using the [Pulsar Testcontainers module](https://www.testcontainers.org/modules/pulsar/)
 
