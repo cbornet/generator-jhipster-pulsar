@@ -24,7 +24,7 @@
     "url": "git+https://github.com/cbornet/generator-jhipster-pulsar.git"
   },
   "dependencies": {
-    "chalk": "2.4.1",
+    "chalk": "3.0.0",
     "generator-jhipster": ">=5.0.0",
     "js-yaml": "3.13.1",
     "mkdirp": "0.5.1",
